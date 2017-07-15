@@ -19,11 +19,11 @@ struct ether_header{
         struct  ether_addr ether_shost;
         unsigned short ether_type;
 };
-
+/*
 struct in_addr{
 	unsigned char in_addr_octed[32];
 };
- 
+*/ 
 struct ip_header{
         unsigned char ip_header_len:4;
         unsigned char ip_version:4;
@@ -116,15 +116,37 @@ int main(int argc, char *argv[]){
 		//printf("%s", packet);
 		//printf("header : %s\n", &header);
 		//printf("%s", *packet);
+		print_ether_header(packet);
 	}
 	pcap_close(handle);
 	return (0);
 }
 
-int print_ether_header(const unsigned char* data){
+void print_ether_header(const unsigned char* data){
 	struct ether_header *eh;
 	unsigned short ether_type;
-	eh = (struct ether_header*)data;
+	eh = (struct ether_header *)data;
+	/*
 	ether_type = noths(eh->ether_type);
+	
+	if(ether_type != 0x0800){
+		printf("ether type wrong\n");
+	}*/
+	
+	printf("\n=== ETHERNET HEADER ===\n");
+	printf("Dst Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
+				eh->ether_dhost.ether_addr_octet[0],
+				eh->ether_dhost.ether_addr_octet[1],
+				eh->ether_dhost.ether_addr_octet[2],
+				eh->ether_dhost.ether_addr_octet[3],
+				eh->ether_dhost.ether_addr_octet[4],
+				eh->ether_dhost.ether_addr_octet[5]);
+	printf("Src Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
+				eh->ether_shost.ether_addr_octet[0],
+				eh->ether_shost.ether_addr_octet[1],
+				eh->ether_shost.ether_addr_octet[2],
+				eh->ether_shost.ether_addr_octet[3],
+				eh->ether_shost.ether_addr_octet[4],
+				eh->ether_shost.ether_addr_octet[5]);
 }
 
