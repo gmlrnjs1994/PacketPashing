@@ -126,12 +126,12 @@ void print_ether_header(const unsigned char* data){
 	struct ether_header *eh;
 	unsigned short ether_type;
 	eh = (struct ether_header *)data;
-	/*
-	ether_type = noths(eh->ether_type);
+	
+	ether_type = ntohs(eh->ether_type);
 	
 	if(ether_type != 0x0800){
 		printf("ether type wrong\n");
-	}*/
+	}
 	
 	printf("\n=== ETHERNET HEADER ===\n");
 	printf("Dst Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
@@ -149,4 +149,10 @@ void print_ether_header(const unsigned char* data){
 				eh->ether_shost.ether_addr_octet[4],
 				eh->ether_shost.ether_addr_octet[5]);
 }
+/*
+void print_ip_header(const unsigned char* data){
+	struct ip_header *ip_head;
+	ip_head = (struct ip_header*)data;
 
+	printf("Src IP Address : %s\n", in
+}*/
