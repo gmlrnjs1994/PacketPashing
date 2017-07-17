@@ -141,31 +141,30 @@ int main(int argc, char *argv[]){
 Ethernet header print Function
 */
 void print_ether_header(const unsigned char* data){
-	struct ether_header *eh;
+	struct ether_header *ether_head;
 	unsigned short ether_type;
-	eh = (struct ether_header *)data;
+	ether_head = (struct ether_header *)data;
 	
-	ether_type = ntohs(eh->ether_type);
+	ether_type = ntohs(ether_head->ether_type);
 	
 	if(ether_type != 0x0800){
 		printf("ether type wrong\n");
 	}
 	
-	printf("\n=== ETHERNET HEADER ===\n");
 	printf("Dst Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
-				eh->ether_dhost.ether_addr_octet[0],
-				eh->ether_dhost.ether_addr_octet[1],
-				eh->ether_dhost.ether_addr_octet[2],
-				eh->ether_dhost.ether_addr_octet[3],
-				eh->ether_dhost.ether_addr_octet[4],
-				eh->ether_dhost.ether_addr_octet[5]);
+				ether_head->ether_dhost.ether_addr_octet[0],
+				ether_head->ether_dhost.ether_addr_octet[1],
+				ether_head->ether_dhost.ether_addr_octet[2],
+				ether_head->ether_dhost.ether_addr_octet[3],
+				ether_head->ether_dhost.ether_addr_octet[4],
+				ether_head->ether_dhost.ether_addr_octet[5]);
 	printf("Src Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
-				eh->ether_shost.ether_addr_octet[0],
-				eh->ether_shost.ether_addr_octet[1],
-				eh->ether_shost.ether_addr_octet[2],
-				eh->ether_shost.ether_addr_octet[3],
-				eh->ether_shost.ether_addr_octet[4],
-				eh->ether_shost.ether_addr_octet[5]);
+				ether_head->ether_shost.ether_addr_octet[0],
+				ether_head->ether_shost.ether_addr_octet[1],
+				ether_head->ether_shost.ether_addr_octet[2],
+				ether_head->ether_shost.ether_addr_octet[3],
+				ether_head->ether_shost.ether_addr_octet[4],
+				ether_head->ether_shost.ether_addr_octet[5]);
 }
 
 /*
