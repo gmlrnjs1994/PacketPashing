@@ -10,6 +10,10 @@ CHO HUI GWON
 #include <pcap.h>
 #include <stdio.h>
 
+
+/*
+Header Structure 
+*/
 struct ether_addr{
         unsigned char ether_addr_octet[6];
 };
@@ -19,11 +23,7 @@ struct ether_header{
         struct  ether_addr ether_shost;
         unsigned short ether_type;
 };
-/*
-struct in_addr{
-	unsigned char in_addr_octed[32];
-};
-*/ 
+ 
 struct ip_header{
         unsigned char ip_header_len:4;
         unsigned char ip_version:4;
@@ -62,12 +62,18 @@ struct tcp_header{
         unsigned short checksum;
         unsigned short urgent_pointer;
 };
- 
+
+/*
+Header print Function
+*/ 
 void print_ether_header(const unsigned char *data);
 int print_ip_header(const unsigned char *data);
 int print_tcp_header(const unsigned char *data);
 void print_data(const unsigned char *data);
 
+/*
+Main Function
+*/
 int main(int argc, char *argv[]){
 	int res;	//	test
 	pcap_t *handle;
@@ -79,6 +85,7 @@ int main(int argc, char *argv[]){
 	bpf_u_int32 net;
 	struct pcap_pkthdr *header;
 	const u_char *packet;
+	int temp = 0;	//	tempNumber;
 
 	dev = pcap_lookupdev(errbuf);
 	
@@ -113,15 +120,26 @@ int main(int argc, char *argv[]){
 	while(1){
 		res = pcap_next_ex(handle, &header, &packet);
 		printf("Jacked a packet with length of [%d]\n", header->len);
-		//printf("%s", packet);
-		//printf("header : %s\n", &header);
-		//printf("%s", *packet);
+		
+		if(res == 0){
+			continue;
+		}
+		
 		print_ether_header(packet);
+		packet = packet + 14;
+		temp = print_ip_header(packet);
+		packet = packet + temp;
+		temp = print_tcp_header(packet);
+		packet = packet + temp;
+		print_data(packet);
 	}
 	pcap_close(handle);
 	return (0);
 }
 
+/*
+Ethernet header print Function
+*/
 void print_ether_header(const unsigned char* data){
 	struct ether_header *eh;
 	unsigned short ether_type;
@@ -149,10 +167,36 @@ void print_ether_header(const unsigned char* data){
 				eh->ether_shost.ether_addr_octet[4],
 				eh->ether_shost.ether_addr_octet[5]);
 }
+
 /*
-void print_ip_header(const unsigned char* data){
+IP header print Function
+*/
+int print_ip_header(const unsigned char* data){
 	struct ip_header *ip_head;
 	ip_head = (struct ip_header*)data;
 
-	printf("Src IP Address : %s\n", in
-}*/
+	printf("Src IP Address : %s\n", inet_ntoa(ip_head->ip_srcaddr));
+	printf("Dst Ip Address : %s\n", inet_ntoa(ip_head->ip_destaddr));
+	
+	return ip_head->ip_header_len*4;
+}
+
+/*
+TCP header print Function
+*/
+int print_tcp_header(const unsigned char* data){
+	struct tcp_header *tcp_head;
+	tcp_head = (struct tcp_header*)data;
+
+	printf("Src Port : %d\n", ntohs(tcp_head->source_port));
+	printf("Dst Port : %d\n", ntohs(tcp_head->dest_port));
+	return tcp_head->data_offset*4;
+}
+
+/*
+Data print Function
+*/
+void print_data(const unsigned char *data){
+	printf("DATA\n");
+	printf("%s\n", data);
+}
