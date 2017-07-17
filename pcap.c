@@ -148,7 +148,7 @@ void print_ether_header(const unsigned char* data){
 	ether_type = ntohs(ether_head->ether_type);
 	
 	if(ether_type != 0x0800){
-		printf("ether type wrong\n");
+		printf("Not ethernet Type\n");
 	}
 	
 	printf("Dst Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
