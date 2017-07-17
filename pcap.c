@@ -71,6 +71,7 @@ int print_ip_header(const unsigned char *data);
 int print_tcp_header(const unsigned char *data);
 void print_data(const unsigned char *data);
 
+int exceptionNum = 0;	//	exception : if((!ether) || (!ip) || (!tcp) )
 /*
 Main Function
 */
@@ -86,7 +87,6 @@ int main(int argc, char *argv[]){
 	struct pcap_pkthdr *header;
 	const u_char *packet;
 	int temp = 0;	//	tempNumber;
-
 	dev = pcap_lookupdev(errbuf);
 	
 	printf("Device : %s\n", dev);	//	print Interface Device
@@ -118,6 +118,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	while(1){
+		exceptionNum == 0;
 		res = pcap_next_ex(handle, &header, &packet);
 		printf("Jacked a packet with length of [%d]\n", header->len);
 		
@@ -126,10 +127,17 @@ int main(int argc, char *argv[]){
 		}
 		
 		print_ether_header(packet);
+		if(exceptionNum == 1){
+			continue;
+		}
 		packet = packet + 14;
 		temp = print_ip_header(packet);
+		if(exceptionNum == 1){
+			continue;
+		}
 		packet = packet + temp;
 		temp = print_tcp_header(packet);
+
 		packet = packet + temp;
 		print_data(packet);
 	}
@@ -147,8 +155,12 @@ void print_ether_header(const unsigned char* data){
 	
 	ether_type = ntohs(ether_head->ether_type);
 	
-	if(ether_type != 0x0800){
-		printf("Not ethernet Type\n");
+	if(ether_type != 0x0800){	//	if( !(ip))
+		printf("Not IP Type\n");
+		exceptionNum == 1;
+		return;
+		/*Return*/
+		
 	}
 	
 	printf("Dst Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
@@ -173,7 +185,10 @@ IP header print Function
 int print_ip_header(const unsigned char* data){
 	struct ip_header *ip_head;
 	ip_head = (struct ip_header*)data;
-
+	if((ip_head->ip_protocol) != 0x06){	//	if( !(tcp))
+		exceptionNum == 1;
+		return ip_head->ip_header_len*4;
+	}
 	printf("Src IP Address : %s\n", inet_ntoa(ip_head->ip_srcaddr));
 	printf("Dst Ip Address : %s\n", inet_ntoa(ip_head->ip_destaddr));
 	
@@ -186,7 +201,6 @@ TCP header print Function
 int print_tcp_header(const unsigned char* data){
 	struct tcp_header *tcp_head;
 	tcp_head = (struct tcp_header*)data;
-
 	printf("Src Port : %d\n", ntohs(tcp_head->source_port));
 	printf("Dst Port : %d\n", ntohs(tcp_head->dest_port));
 	return tcp_head->data_offset*4;
