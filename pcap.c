@@ -10,6 +10,7 @@ CHO HUI GWON
 #include <pcap.h>
 #include <stdio.h>
 
+#include <stdint.h>
 
 /*
 Header Structure 
@@ -45,8 +46,15 @@ struct ip_header{
 struct tcp_header{
         unsigned short source_port;
         unsigned short dest_port;
+	/*
+	unsigned int -> uint16_t (stdint.h)
+	*/
+	uint16_t sequence;
+	uint16_t acknowledge;
+	/*
         unsigned int sequence;
         unsigned int acknowledge;
+	*/
         unsigned char ns:1;
         unsigned char reserved_part1:3;
         unsigned char data_offset:4;
@@ -97,8 +105,8 @@ int main(int argc, char *argv[]){
 
 	if(pcap_lookupnet(dev, &net, &mask, errbuf) == -1){
 		fprintf(stderr, "Couldn't get netmask for device %s : %s\n", dev, errbuf);
-	net = 0;
-	mask = 0;
+		net = 0;
+		mask = 0;
 	}
 	
 	handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
@@ -109,12 +117,12 @@ int main(int argc, char *argv[]){
 	
 	if(pcap_compile(handle, &fp, filter_exp, 0, net) == -1){
 		fprintf(stderr, "Couldn't parse filter %s : %s\n", filter_exp, pcap_geterr(handle));
-	return (2);
+		return (2);
 	}
 	
 	if(pcap_setfilter(handle, &fp) == -1){
 		fprintf(stderr, "Couldn't install filter %s : %s\n", filter_exp, pcap_geterr(handle));
-	return (2);
+		return (2);
 	}
 	
 	while(1){
@@ -124,6 +132,10 @@ int main(int argc, char *argv[]){
 		
 		if(res == 0){
 			continue;
+		}else if(res == -1){
+
+		}else if(res == 1){
+
 		}
 		
 		print_ether_header(packet);
@@ -185,10 +197,20 @@ IP header print Function
 int print_ip_header(const unsigned char* data){
 	struct ip_header *ip_head;
 	ip_head = (struct ip_header*)data;
+	
+	/*
+	char buf1[32] = {0, };
+	char buf2[32] = {0, };
+	inet_pton(AF_INET, inet_ntoa(ip_head->ip_srcaddr), 
+	
+	*/
 	if((ip_head->ip_protocol) != 0x06){	//	if( !(tcp))
 		exceptionNum == 1;
 		return ip_head->ip_header_len*4;
 	}
+
+	//printf("Src IP Address : %s\n", inet_ntop(AF_INET, 
+	
 	printf("Src IP Address : %s\n", inet_ntoa(ip_head->ip_srcaddr));
 	printf("Dst Ip Address : %s\n", inet_ntoa(ip_head->ip_destaddr));
 	
