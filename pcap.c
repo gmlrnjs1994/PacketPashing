@@ -80,6 +80,8 @@ int print_tcp_header(const unsigned char *data);
 void print_data(const unsigned char *data);
 
 int exceptionNum = 0;	//	exception : if((!ether) || (!ip) || (!tcp) )
+char addr_buf[20];	//	buffer for IP Address
+
 /*
 Main Function
 */
@@ -217,10 +219,14 @@ int print_ip_header(const unsigned char* data){
 	}
 
 	//printf("Src IP Address : %s\n", inet_ntop(AF_INET, 
-	
+	inet_ntop(AF_INET, &(ip_head->ip_srcaddr), addr_buf, sizeof(addr_buf));
+	printf("Src IP Address : %s\n", addr_buf);
+	inet_ntop(AF_INET, &(ip_head->ip_destaddr), addr_buf, sizeof(addr_buf));
+	printf("Src IP Address : %s\n", addr_buf);
+	/*
 	printf("Src IP Address : %s\n", inet_ntoa(ip_head->ip_srcaddr));
 	printf("Dst Ip Address : %s\n", inet_ntoa(ip_head->ip_destaddr));
-	
+	*/
 	return ip_head->ip_header_len*4;
 }
 
