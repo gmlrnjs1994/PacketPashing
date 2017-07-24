@@ -95,8 +95,15 @@ int main(int argc, char *argv[]){
 	struct pcap_pkthdr *header;
 	const u_char *packet;
 	int temp = 0;	//	tempNumber;
-	dev = pcap_lookupdev(errbuf);
+	//dev = pcap_lookupdev(errbuf);
 	
+	if(argc == 1){
+		printf("ERROR : Send dev name\n");
+		return 0;
+	}
+
+	dev = argv[1];
+
 	printf("Device : %s\n", dev);	//	print Interface Device
 	if(dev == NULL){
 		fprintf(stderr, "Couldn't find default device : %s\n", errbuf);
