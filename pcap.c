@@ -142,9 +142,8 @@ int main(int argc, char *argv[]){
 		if(res == 0){
 			continue;
 		}else if(res == -1){
-
-		}else if(res == 1){
-
+			printf("Error : Fail to read the packets");
+			continue;
 		}
 		
 		print_ether_header(packet);
