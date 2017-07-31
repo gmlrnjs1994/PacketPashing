@@ -99,14 +99,36 @@ int main(int argc, char *argv[]){
 	int temp = 0;	//	tempNumber;
 	//dev = pcap_lookupdev(errbuf);
 	
+	char *senderIP;
+	char *targetIP;
+	
+	int key = 0;
+	
 	if(argc == 1){
 		printf("ERROR : Send dev name\n");
 		return 0;
 	}
 
 	dev = argv[1];
+	
+	if(argc == 2){
+		printf("ERROR : Write sender IP Address\n");
+		return 0;
+	}
+	
+	senderIP = argv[2];
+
+	if(argc == 3){
+		printf("ERROR : Write target IP Address\n");
+		return 0;
+	}
+
+	targetIP = argv[3];
 
 	printf("Device : %s\n", dev);	//	print Interface Device
+	printf("sender IP Address : %s\n", senderIP);
+	printf("target IP Address : %s\n", targetIP);
+
 	if(dev == NULL){
 		fprintf(stderr, "Couldn't find default device : %s\n", errbuf);
 		return (2);
@@ -133,34 +155,42 @@ int main(int argc, char *argv[]){
 		fprintf(stderr, "Couldn't install filter %s : %s\n", filter_exp, pcap_geterr(handle));
 		return (2);
 	}
-	
-	while(1){
-		exceptionNum == 0;
-		res = pcap_next_ex(handle, &header, &packet);
-		printf("Jacked a packet with length of [%d]\n", header->len);
-		
-		if(res == 0){
-			continue;
-		}else if(res == -1){
-			printf("Error : Fail to read the packets");
-			continue;
-		}
-		
-		print_ether_header(packet);
-		if(exceptionNum == 1){
-			continue;
-		}
-		packet = packet + 14;
-		temp = print_ip_header(packet);
-		if(exceptionNum == 1){
-			continue;
-		}
-		packet = packet + temp;
-		temp = print_tcp_header(packet);
 
-		packet = packet + temp;
-		print_data(packet);
-	}
+	printf("1 : Watch packet ||||| 2 : Send packet\n");
+	printf("OK, Ready to move. Select the Object :) >> ");
+	scanf("%d", &key);
+
+	if(key == 1){
+		while(1){
+			exceptionNum == 0;
+			res = pcap_next_ex(handle, &header, &packet);
+			printf("Jacked a packet with length of [%d]\n", header->len);
+		
+			if(res == 0){
+				continue;
+			}else if(res == -1){
+				printf("Error : Fail to read the packets");
+				continue;
+			}
+		
+			print_ether_header(packet);
+			if(exceptionNum == 1){
+				continue;
+			}
+			packet = packet + 14;
+			temp = print_ip_header(packet);
+			if(exceptionNum == 1){
+				continue;
+			}
+			packet = packet + temp;
+			temp = print_tcp_header(packet);
+	
+			packet = packet + temp;
+			print_data(packet);
+		}
+	}else if(key == 2){
+
+	}else{}
 	pcap_close(handle);
 	return (0);
 }
