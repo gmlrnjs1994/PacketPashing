@@ -261,9 +261,11 @@ int main(int argc, char *argv[]){
 		for(i = 0; i < 100; i++){
 			mypacket[i] = i%256;
 		}
-
-
-			
+		
+		if(pcap_sendpacket(handle, mypacket, 100) != 0){
+			printf("Error : Fail to send the packet\n");
+			return 0;
+		}	
 	}else{}
 	pcap_close(handle);
 	return (0);
