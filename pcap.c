@@ -101,9 +101,11 @@ int main(int argc, char *argv[]){
 	
 	char *senderIP;
 	char *targetIP;
-	
+	u_char mypacket[100];
+
 	int key = 0;
-	
+	int i;
+
 	if(argc == 1){
 		printf("ERROR : Send dev name\n");
 		return 0;
@@ -190,6 +192,78 @@ int main(int argc, char *argv[]){
 		}
 	}else if(key == 2){
 
+		/*dest mac addr*/
+		mypacket[0] = 0xff;
+		mypacket[1] = 0xff;
+		mypacket[2] = 0xff;
+		mypacket[3] = 0xff;
+		mypacket[4] = 0xff;
+		mypacket[5] = 0xff;
+
+		/*src mac addr*/
+		mypacket[6] = 0x00;
+		mypacket[7] = 0x11;
+		mypacket[8] = 0x22;
+		mypacket[9] = 0x33;
+		mypacket[10] = 0x44;
+		mypacket[11] = 0x55;
+
+		/*arp*/
+		mypacket[12] = 0x08;
+		mypacket[13] = 0x06;
+
+		/*Hardware type : ethernet*/
+		mypacket[14] = 0x08;
+		mypacket[15] = 0x00;
+
+		/*protocol type : ip*/
+		mypacket[16] = 0x08;
+		mypacket[17] = 0x00;
+
+		/*Hardware Length*/
+		mypacket[18] = 0x06;
+
+		/*Protocol Length*/
+		mypacket[19] = 0x04;
+
+		/*Operation, 1 : request   2 : reply*/
+		mypacket[20] = 0x01;
+		mypacket[21] = 0x02;
+
+		/*Sender MAC addr*/
+		mypacket[22] = 0xff;
+		mypacket[23] = 0xff;
+		mypacket[24] = 0xff;
+		mypacket[25] = 0xff;
+		mypacket[26] = 0xff;
+		mypacket[27] = 0xff;
+		
+		/*Sender IP addr*/
+		mypacket[28] = 0xff;
+		mypacket[29] = 0xff;
+		mypacket[30] = 0xff;
+		mypacket[31] = 0xff;
+
+		/*Target MAC addr*/
+		mypacket[32] = 0xff;
+		mypacket[33] = 0xff;
+		mypacket[34] = 0xff;
+		mypacket[35] = 0xff;
+		mypacket[36] = 0xff;
+		mypacket[37] = 0xff;
+
+		/*Target IP addr*/
+		mypacket[38] = 0xff;
+		mypacket[39] = 0xff;
+		mypacket[40] = 0xff;
+		mypacket[41] = 0xff;
+
+		for(i = 0; i < 100; i++){
+			mypacket[i] = i%256;
+		}
+
+
+			
 	}else{}
 	pcap_close(handle);
 	return (0);
