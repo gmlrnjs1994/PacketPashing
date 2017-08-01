@@ -106,6 +106,11 @@ int main(int argc, char *argv[]){
 	int key = 0;
 	int i;
 
+	char senderMAC[20];
+	char targetMAC[20];
+	
+	char bufff[256];
+	FILE *tempfp;
 	if(argc == 1){
 		printf("ERROR : Send dev name\n");
 		return 0;
@@ -124,7 +129,17 @@ int main(int argc, char *argv[]){
 		printf("ERROR : Write target IP Address\n");
 		return 0;
 	}
-
+	//	
+	tempfp = popen("ifconfig | grep \"ether\" | awk '{print $2'}", "r");
+	if(tempfp == NULL){
+		perror("popen failed");
+		return -1;
+	}
+	while(fgets(senderMAC, 20, tempfp) != NULL){
+		printf("%s", senderMAC);
+	}
+	//
+	pclose(tempfp);
 	targetIP = argv[3];
 
 	printf("Device : %s\n", dev);	//	print Interface Device
@@ -191,6 +206,18 @@ int main(int argc, char *argv[]){
 			print_data(packet);
 		}
 	}else if(key == 2){
+		/*
+		printf("*\n");
+		tempfp = popen("ifconfig | grep \"ether\" | awk '{print $2}'", "r");
+		if(tempfp = NULL){
+			perror("popen() failed");
+			return -1;
+		}
+		printf("*\n");
+		while(fgets(senderMAC, 19, tempfp));
+		printf("*\n");
+		pclose(tempfp);
+		printf("sender MAC : %s\n", senderMAC);*/
 
 		/*dest mac addr*/
 		mypacket[0] = 0xff;
