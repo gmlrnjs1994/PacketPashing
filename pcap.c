@@ -4,7 +4,11 @@ KITRI BEST OF THE BEST 6TH
 CONSULTING PeTrA 
 CHO HUI GWON
 */
-
+//#include <Qcorepplication>
+#include <netinet/in.h>
+#include <netinet/ether.h>
+//#include <fstream>
+#include <stdlib.h>
 #include <arpa/inet.h>
 
 #include <pcap.h>
@@ -15,16 +19,18 @@ CHO HUI GWON
 /*
 Header Structure 
 */
+/*
 struct ether_addr{
         unsigned char ether_addr_octet[6];
 };
- 
+*/
+/*
 struct ether_header{
         struct  ether_addr ether_dhost;
         struct  ether_addr ether_shost;
         unsigned short ether_type;
-};
- 
+};*/
+
 struct ip_header{
         unsigned char ip_header_len:4;
         unsigned char ip_version:4;
@@ -101,7 +107,7 @@ int main(int argc, char *argv[]){
 	
 	char *senderIP;
 	char *targetIP;
-	u_char mypacket[100];
+	u_char mypacket[42];
 
 	int key = 0;
 	int i;
@@ -111,6 +117,10 @@ int main(int argc, char *argv[]){
 	
 	char bufff[256];
 	FILE *tempfp;
+
+	struct ether_header *eth;
+	struct ether_arp *arp;
+
 	if(argc == 1){
 		printf("ERROR : Send dev name\n");
 		return 0;
@@ -218,8 +228,10 @@ int main(int argc, char *argv[]){
 		printf("*\n");
 		pclose(tempfp);
 		printf("sender MAC : %s\n", senderMAC);*/
-
-		/*dest mac addr*/
+		
+		//send arp request
+		/*
+		dest mac addr
 		mypacket[0] = 0xff;
 		mypacket[1] = 0xff;
 		mypacket[2] = 0xff;
@@ -227,51 +239,54 @@ int main(int argc, char *argv[]){
 		mypacket[4] = 0xff;
 		mypacket[5] = 0xff;
 
-		/*src mac addr*/
+		src mac addr
 		mypacket[6] = 0x00;
 		mypacket[7] = 0x11;
 		mypacket[8] = 0x22;
 		mypacket[9] = 0x33;
 		mypacket[10] = 0x44;
-		mypacket[11] = 0x55;
+		mypacket[11] = 0x55senderMAC;
 
-		/*arp*/
+		arp
 		mypacket[12] = 0x08;
 		mypacket[13] = 0x06;
 
-		/*Hardware type : ethernet*/
-		mypacket[14] = 0x08;
-		mypacket[15] = 0x00;
+		Hardware type : ethernet
+		mypacket[14] = 0x00;//0x08;
+		mypacket[15] = 0x01;//0x00;
 
-		/*protocol type : ip*/
+		protocol type : ip
 		mypacket[16] = 0x08;
 		mypacket[17] = 0x00;
 
-		/*Hardware Length*/
+		Hardware Length
 		mypacket[18] = 0x06;
 
-		/*Protocol Length*/
+		Protocol Length
 		mypacket[19] = 0x04;
 
-		/*Operation, 1 : request   2 : reply*/
-		mypacket[20] = 0x01;
-		mypacket[21] = 0x02;
+		Operation, 1 : request   2 : reply
+		mypacket[20] = 0x00//0x01;
+		mypacket[21] = 0x01//0x02;
 
-		/*Sender MAC addr*/
-		mypacket[22] = 0xff;
-		mypacket[23] = 0xff;
-		mypacket[24] = 0xff;
-		mypacket[25] = 0xff;
-		mypacket[26] = 0xff;
-		mypacket[27] = 0xff;
+		Sender MAC addr
+		sprintf(mypacket[22], "%x", senderMAC[0]);
+
 		
-		/*Sender IP addr*/
+		mypacket[22] = senderMAC[0]; 
+		mypacket[23] = senderMAC[1];
+		mypacket[24] = senderMAC[3];
+		mypacket[25] = senderMAC[4];
+		mypacket[26] = senderMAC[6];
+		mypacket[27] = senderMAC[7];
+		
+		Sender IP addr
 		mypacket[28] = 0xff;
 		mypacket[29] = 0xff;
 		mypacket[30] = 0xff;
 		mypacket[31] = 0xff;
 
-		/*Target MAC addr*/
+		Target MAC addr
 		mypacket[32] = 0xff;
 		mypacket[33] = 0xff;
 		mypacket[34] = 0xff;
@@ -279,7 +294,7 @@ int main(int argc, char *argv[]){
 		mypacket[36] = 0xff;
 		mypacket[37] = 0xff;
 
-		/*Target IP addr*/
+		Target IP addr
 		mypacket[38] = 0xff;
 		mypacket[39] = 0xff;
 		mypacket[40] = 0xff;
@@ -288,11 +303,90 @@ int main(int argc, char *argv[]){
 		for(i = 0; i < 100; i++){
 			mypacket[i] = i%256;
 		}
-		
-		if(pcap_sendpacket(handle, mypacket, 100) != 0){
-			printf("Error : Fail to send the packet\n");
+		*/
+		eth = (struct ether_header *)mypacket;
+		ether_aton_r("ff:ff:ff:ff:ff:ff", (struct ether_addr *)eth->ether_dhost);
+		ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
+		eth->ether_type = htons(ETHERTYPE_ARP);
+
+		arp = (struct ether_arp *)(mypacket + ETH_HLEN);
+		arp->arp_hrd = htons(ARPHRD_ETHER);	// Hardware type
+		arp->arp_pro = htons(ETHERTYPE_IP);	// Protocol type
+		arp->arp_hln = ETHER_ADDR_LEN;		// Hardware length
+		arp->arp_pln = sizeof(struct in_addr);	// Protocol length
+		arp->arp_op = htons(ARPOP_REQUEST);	// operation request : 1, repley : 2
+		ether_aton_r(senderMAC, (struct ether_addr *)arp->arp_sha);	// Sender Hardware Address
+		inet_pton(AF_INET, senderIP, arp->arp_spa);	// Sender IP Address
+		ether_aton_r("ff:ff:ff:ff:ff:ff", (struct ether_addr *)arp->arp_tha);	// Target Hadware Address
+		inet_pton(AF_INET, targetIP, arp->arp_spa);	// Sender IP Address
+		if(pcap_sendpacket(handle, mypacket, sizeof(mypacket)) == -1){
+			printf("Error : Fail to send the ARP Request\n");
 			return 0;
-		}	
+		}else{
+			printf("Sending ARP Request is Success :) \n");
+		}
+
+		while(1){
+			exceptionNum == 0;
+			res = pcap_next_ex(handle, &header, &packet);
+			printf("Jacked a packet with length of [%d]\n", header->len);
+		
+			if(res == 0){
+				continue;
+			}else if(res == -1){
+				printf("Error : Fail to read the packets");
+				continue;
+			}
+
+			eth = (struct ether_header *)packet;
+			arp = (struct ether_arp *)(packet + ETH_HLEN);
+
+			if(ntohs(eth->ether_type) == ETHERTYPE_ARP){
+				sprintf(targetMAC, "%s", ether_ntoa(((struct ether_addr *)arp->arp_sha)));
+				printf("Received target MAC Address :)\n");
+				break;
+			}
+			/*
+			print_ether_header(packet);
+			
+			if(exceptionNum == 1){
+				continue;
+			}
+			packet = packet + 14;
+			temp = print_ip_header(packet);
+			if(exceptionNum == 1){
+				continue;
+			}
+			packet = packet + temp;
+			temp = print_tcp_header(packet);
+	
+			packet = packet + temp;
+			print_data(packet);
+			*/
+		}
+
+		eth = (struct ether_header *)mypacket;
+		ether_aton_r(targetMAC, (struct ether_addr *)eth->ether_dhost);
+		ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
+		eth->ether_type = htons(ETHERTYPE_ARP);
+
+		arp = (struct ether_arp *)(mypacket + ETH_HLEN);
+		arp->arp_hrd = htons(ARPHRD_ETHER);	// Hardware type
+		arp->arp_pro = htons(ETHERTYPE_IP);	// Protocol type
+		arp->arp_hln = ETHER_ADDR_LEN;		// Hardware length
+		arp->arp_pln = sizeof(struct in_addr);	// Protocol length
+		arp->arp_op = htons(ARPOP_REPLY);	// operation request : 1, reply : 2
+		ether_aton_r(senderMAC, (struct ether_addr *)arp->arp_sha);	// Sender Hardware Address
+		inet_pton(AF_INET, senderIP, arp->arp_spa);	// Sender IP Address
+		ether_aton_r(targetMAC, (struct ether_addr *)arp->arp_tha);	// Target Hadware Address
+		inet_pton(AF_INET, targetIP, arp->arp_spa);	// Sender IP Address
+		if(pcap_sendpacket(handle, mypacket, sizeof(mypacket)) == -1){
+			printf("Error : Fail to send the ARP Reply\n");
+			return 0;
+		}else{
+			printf("Sending ARP Reply is Success :) \n");
+		}
+			
 	}else{}
 	pcap_close(handle);
 	return (0);
@@ -317,19 +411,25 @@ void print_ether_header(const unsigned char* data){
 	}
 	
 	printf("Dst Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
-				ether_head->ether_dhost.ether_addr_octet[0],
-				ether_head->ether_dhost.ether_addr_octet[1],
-				ether_head->ether_dhost.ether_addr_octet[2],
-				ether_head->ether_dhost.ether_addr_octet[3],
-				ether_head->ether_dhost.ether_addr_octet[4],
-				ether_head->ether_dhost.ether_addr_octet[5]);
+				ether_head->ether_dhost[0],
+				ether_head->ether_dhost[1],
+				ether_head->ether_dhost[2],
+				ether_head->ether_dhost[3],
+				ether_head->ether_dhost[4],
+				ether_head->ether_dhost[5]);
+	
 	printf("Src Mac Addr [%02x:%02x:%02x:%02x:%02x:%02x]\n",
-				ether_head->ether_shost.ether_addr_octet[0],
-				ether_head->ether_shost.ether_addr_octet[1],
-				ether_head->ether_shost.ether_addr_octet[2],
-				ether_head->ether_shost.ether_addr_octet[3],
-				ether_head->ether_shost.ether_addr_octet[4],
-				ether_head->ether_shost.ether_addr_octet[5]);
+				ether_head->ether_shost[0],
+				ether_head->ether_shost[1],
+				ether_head->ether_shost[2],
+				ether_head->ether_shost[3],
+				ether_head->ether_shost[4],
+				ether_head->ether_shost[5]);
+				
+	/*
+	printf("Dst Mac Addr : %s\n", ether_head->ether_dhost);
+	printf("Src Mac Addr : %s\n", ether_head->ether_shost);
+	*/
 }
 
 /*
