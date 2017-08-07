@@ -261,6 +261,10 @@ int main(int argc, char *argv[]){
 
 		Hardware Length
 		mypacket[18] = 0x06;
+	struct ether_header *eth;
+	struct ether_arp *arp;
+
+
 
 		Protocol Length
 		mypacket[19] = 0x04;
@@ -304,6 +308,8 @@ int main(int argc, char *argv[]){
 			mypacket[i] = i%256;
 		}
 		*/
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
 		eth = (struct ether_header *)mypacket;
 		ether_aton_r("ff:ff:ff:ff:ff:ff", (struct ether_addr *)eth->ether_dhost);
 		ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
@@ -346,23 +352,6 @@ int main(int argc, char *argv[]){
 				printf("Received target MAC Address :)\n");
 				break;
 			}
-			/*
-			print_ether_header(packet);
-			
-			if(exceptionNum == 1){
-				continue;
-			}
-			packet = packet + 14;
-			temp = print_ip_header(packet);
-			if(exceptionNum == 1){
-				continue;
-			}
-			packet = packet + temp;
-			temp = print_tcp_header(packet);
-	
-			packet = packet + temp;
-			print_data(packet);
-			*/
 		}
 
 		eth = (struct ether_header *)mypacket;
@@ -479,4 +468,81 @@ Data print Function
 void print_data(const unsigned char *data){
 	printf("DATA\n");
 	printf("%s\n", data);
+}
+
+
+
+/*
+return 1 : Sccess,   return 0 : not excute,   return -1 : failed
+ */
+int sendArpReply(pcap_t *handle, struct pcap_pkthdr *header, char *senderMAC, char *senderIP, char *targetMAC, char *targetIP){
+	u_char mypacket[42];
+	struct ether_header *eth;
+	struct ether_arp *arp;
+	int res;
+	const u_char *packet;
+	eth = (struct ether_header *)mypacket;
+	ether_aton_r("ff:ff:ff:ff:ff:ff", (struct ether_addr *)eth->ether_dhost);
+	ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
+	eth->ether_type = htons(ETHERTYPE_ARP);
+	arp = (struct ether_arp *)(mypacket + ETH_HLEN);
+	arp->arp_hrd = htons(ARPHRD_ETHER);	// Hardware type
+	arp->arp_pro = htons(ETHERTYPE_IP);	// Protocol type
+	arp->arp_hln = ETHER_ADDR_LEN;		// Hardware length
+	arp->arp_pln = sizeof(struct in_addr);	// Protocol length
+	arp->arp_op = htons(ARPOP_REQUEST);	// operation request : 1, repley : 2
+	ether_aton_r(senderMAC, (struct ether_addr *)arp->arp_sha);	// Sender Hardware Address
+	inet_pton(AF_INET, senderIP, arp->arp_spa);	// Sender IP Address
+	ether_aton_r("ff:ff:ff:ff:ff:ff", (struct ether_addr *)arp->arp_tha);	// Target Hadware Address
+	inet_pton(AF_INET, targetIP, arp->arp_spa);	// Sender IP Address
+	if(pcap_sendpacket(handle, mypacket, sizeof(mypacket)) == -1){
+		printf("Error : Fail to send the ARP Request\n");
+		return (-1);
+	}else{
+		printf("Sending ARP Request is Success :) \n");
+	}
+	while(1){
+		exceptionNum == 0;
+		res = pcap_next_ex(handle, &header, &packet);
+		printf("Jacked a packet with length of [%d]\n", header->len);
+		
+		if(res == 0){
+			continue;
+		}else if(res == -1){
+			printf("Error : Fail to read the packets");
+			continue;
+		}
+
+		eth = (struct ether_header *)packet;
+		arp = (struct ether_arp *)(packet + ETH_HLEN);
+
+		if(ntohs(eth->ether_type) == ETHERTYPE_ARP){
+			sprintf(targetMAC, "%s", ether_ntoa(((struct ether_addr *)arp->arp_sha)));
+			printf("Received target MAC Address :)\n");
+			break;
+		}
+	}
+
+	eth = (struct ether_header *)mypacket;
+	ether_aton_r(targetMAC, (struct ether_addr *)eth->ether_dhost);
+	ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
+	eth->ether_type = htons(ETHERTYPE_ARP);
+	arp = (struct ether_arp *)(mypacket + ETH_HLEN);
+	arp->arp_hrd = htons(ARPHRD_ETHER);	// Hardware type
+	arp->arp_pro = htons(ETHERTYPE_IP);	// Protocol type
+	arp->arp_hln = ETHER_ADDR_LEN;		// Hardware length
+	arp->arp_pln = sizeof(struct in_addr);	// Protocol length
+	arp->arp_op = htons(ARPOP_REPLY);	// operation request : 1, reply : 2
+	ether_aton_r(senderMAC, (struct ether_addr *)arp->arp_sha);	// Sender Hardware Address
+	inet_pton(AF_INET, senderIP, arp->arp_spa);	// Sender IP Address
+	ether_aton_r(targetMAC, (struct ether_addr *)arp->arp_tha);	// Target Hadware Address
+	inet_pton(AF_INET, targetIP, arp->arp_spa);	// Sender IP Address
+	if(pcap_sendpacket(handle, mypacket, sizeof(mypacket)) == -1){
+		printf("Error : Fail to send the ARP Reply\n");
+		return (-1);
+	}else{
+		printf("Sending ARP Reply is Success :) \n");
+		return 1;
+	}
+	return 0;
 }
