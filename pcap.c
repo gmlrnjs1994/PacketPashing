@@ -393,6 +393,7 @@ int main(int argc, char *argv[]){
 			printf("failed\n");
 		}
 
+		if(sendArpReply(handle, header, senderMAC, targetIP, gatewayMAC, 
 			
 	}else{}
 	pcap_close(handle);
@@ -448,7 +449,7 @@ int print_ip_header(const unsigned char* data){
 	
 	/*
 	char buf1[32] = {0, };
-	char buf2[32] = {0, };
+	char buf2[32] = {0, };E
 	inet_pton(AF_INET, inet_ntoa(ip_head->ip_srcaddr), 
 	
 	*/
