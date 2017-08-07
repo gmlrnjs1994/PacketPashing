@@ -15,7 +15,7 @@ CHO HUI GWON
 #include <stdio.h>
 
 #include <stdint.h>
-
+#include <string.h>
 /*
 Header Structure 
 */
@@ -454,6 +454,11 @@ void print_ether_header(const unsigned char* data){
 	*/
 }
 
+void make_relay_packet(const unsigned char* data){
+	struct ether_header *ether_head;
+	
+}
+
 /*
 IP header print Function
 */
@@ -476,7 +481,7 @@ int print_ip_header(const unsigned char* data){
 	inet_ntop(AF_INET, &(ip_head->ip_srcaddr), addr_buf, sizeof(addr_buf));
 	printf("Src IP Address : %s\n", addr_buf);
 	inet_ntop(AF_INET, &(ip_head->ip_destaddr), addr_buf, sizeof(addr_buf));
-	printf("Src IP Address : %s\n", addr_buf);
+	printf("Dst IP Address : %s\n", addr_buf);
 	/*
 	printf("Src IP Address : %s\n", inet_ntoa(ip_head->ip_srcaddr));
 	printf("Dst Ip Address : %s\n", inet_ntoa(ip_head->ip_destaddr));
@@ -484,6 +489,23 @@ int print_ip_header(const unsigned char* data){
 	return ip_head->ip_header_len*4;
 }
 
+
+
+int returnIp(const unsigned char* data){
+	struct ip_header *ip_head;
+	ip_head = (struct ip_header*)data;
+	char *returnValue;
+	if((ip_head->ip_protocol) != 0x06){	//	if( !(tcp))
+		//exceptionNum == 1;
+		return ip_head->ip_header_len*4;
+	}
+	//inet_ntop(AF_INET, &(ip_head->ip_srcaddr), addr_buf, sizeof(addr_buf));
+	//printf("Src IP Address : %s\n", addr_buf);
+	inet_ntop(AF_INET, &(ip_head->ip_destaddr), addr_buf, sizeof(addr_buf));
+	//printf("Dst IP Address : %s\n", addr_buf);
+	
+	return ip_head->ip_header_len*4;
+}
 /*
 TCP header print Function
 */
@@ -572,10 +594,47 @@ int sendArpReply(pcap_t *handle, struct pcap_pkthdr *header, char *senderMAC, ch
 	inet_pton(AF_INET, targetIP, arp->arp_spa);	// Sender IP Address
 	if(pcap_sendpacket(handle, mypacket, sizeof(mypacket)) == -1){
 		printf("Error : Fail to send the ARP Reply\n");
-		return (-1);
+		return -1;
 	}else{
 		printf("Sending ARP Reply is Success :) \n");
 		return 1;
 	}
 	return 0;
+}
+
+int sendRelay(struct pcap_pkthdr *header, const u_char *packet, pcap_t *handle, char* myIP){
+	int exceptionNum;
+	int res;
+	int temp;
+	while(1){
+		exceptionNum == 0;
+		res = pcap_next_ex(handle, &header, &packet);
+		//printf("Jacked a packet with length of [%d]\n", header->len);
+	
+		if(res == 0){
+			continue;
+		}else if(res == -1){
+			printf("Error : Fail to read the packets");
+			continue;
+		}
+		
+	//	print_ether_header(packet);
+		if(exceptionNum == 1){
+			continue;
+		}
+		packet = packet + 14;
+		temp = returnIp(packet);
+		if(strcmp(addr_buf, myIP)){	//	if ip address is not my ip address : relay 
+			printf("relay\n");
+			
+
+		}
+		if(exceptionNum == 1){
+			continue;
+		}
+		packet = packet + temp;
+		temp = print_tcp_header(packet);
+		packet = packet + temp;
+		print_data(packet);
+	}
 }
