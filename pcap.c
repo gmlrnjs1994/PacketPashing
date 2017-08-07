@@ -92,6 +92,13 @@ int sendArpReply(pcap_t *handle, struct pcap_pkthdr *header, char *senderMAC, ch
 /*
 Main Function
 */
+/*
+char *SENDER_IP;
+char *TARGET_IP;
+char SENDER_MAC[18];
+char TARGET_MAC[18];
+char MY_IP[16];
+char GATEWAY_MAC[18];*/
 int main(int argc, char *argv[]){
 	int res;	//	test
 	pcap_t *handle;
@@ -138,14 +145,14 @@ int main(int argc, char *argv[]){
 	}
 	
 	senderIP = argv[2];
-
+	//SENDER_IP = senderIP;
 	if(argc == 3){
 		printf("ERROR : Write target IP Address\n");
 		return 0;
 	}
 	//
 	targetIP = argv[3];
-
+	//TARGET_IP = targetIP;
 	tempfp = popen("ifconfig | grep \"ether\" | awk '{print $2'}", "r");
 	if(tempfp == NULL){
 		perror("popen failed");
@@ -181,6 +188,12 @@ int main(int argc, char *argv[]){
 	printf("My MAC Adress : %s", senderMAC);
 	printf("My IP Address : %s", myIP);
 	printf("Gateway IP Address : %s\n", gatewayIP);
+	/*
+	SENDER_IP = senderIP;
+	TARGET_IP = targetIP;
+	SENDER_MAC = senderMAC;
+	MY_IP = myIP;
+	GATEWAY_IP = gatewayIP;*/
 	if(dev == NULL){
 		fprintf(stderr, "Couldn't find default device : %s\n", errbuf);
 		return (2);
@@ -457,7 +470,7 @@ void print_ether_header(const unsigned char* data){
 void make_relay_packet(const unsigned char* data, char* macAddr){
 	struct ether_header *ether_head;
 	ether_head = (struct ether_header *)data;
-	ether_aton_r(macAddr, (struct ether_addr *)ether_head->ether_dhost);
+	ether_aton_r(macAddr, (struct ether_addr *)ether_head->ether_dhost);	
 	//ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
 	//eth->ether_type = htons(ETHERTYPE_ARP);
 }
@@ -605,7 +618,7 @@ int sendArpReply(pcap_t *handle, struct pcap_pkthdr *header, char *senderMAC, ch
 	return 0;
 }
 
-int sendRelay(struct pcap_pkthdr *header, const u_char *packet, pcap_t *handle, char* myIP){
+int sendRelay(struct pcap_pkthdr *header, const u_char *packet, pcap_t *handle, char* myIP, char* senderMAC, char* targetMAC, char* gatewayMAC){
 	int exceptionNum;
 	int res;
 	int temp;
@@ -629,7 +642,12 @@ int sendRelay(struct pcap_pkthdr *header, const u_char *packet, pcap_t *handle, 
 		temp = returnIp(packet);
 		if(strcmp(addr_buf, myIP)){	//	if ip address is not my ip address : relay 
 			printf("relay\n");
-			
+			packet = packet -14;
+			make_relay_packet(packet, gatewayMAC); 
+			if(pcap_sendpacket(handle, packet, sizeof(packet)) == -1){
+			printf("Error : Fail to send the ARP Reply\n");
+			return 0;
+		}
 
 		}
 		if(exceptionNum == 1){
