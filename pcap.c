@@ -454,9 +454,12 @@ void print_ether_header(const unsigned char* data){
 	*/
 }
 
-void make_relay_packet(const unsigned char* data){
+void make_relay_packet(const unsigned char* data, char* macAddr){
 	struct ether_header *ether_head;
-	
+	ether_head = (struct ether_header *)data;
+	ether_aton_r(macAddr, (struct ether_addr *)ether_head->ether_dhost);
+	//ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
+	//eth->ether_type = htons(ETHERTYPE_ARP);
 }
 
 /*
