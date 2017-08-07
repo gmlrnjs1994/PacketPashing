@@ -88,6 +88,7 @@ void print_data(const unsigned char *data);
 int exceptionNum = 0;	//	exception : if((!ether) || (!ip) || (!tcp) )
 char addr_buf[20];	//	buffer for IP Address
 
+int sendArpReply(pcap_t *handle, struct pcap_pkthdr *header, char *senderMAC, char *senderIP, char *targetMAC, char *targetIP);
 /*
 Main Function
 */
@@ -112,8 +113,9 @@ int main(int argc, char *argv[]){
 	int key = 0;
 	int i;
 
-	char senderMAC[20];
-	char targetMAC[20];
+	char senderMAC[18];
+	char targetMAC[18];
+	char myIP[16];
 	
 	char bufff[256];
 	FILE *tempfp;
@@ -139,23 +141,34 @@ int main(int argc, char *argv[]){
 		printf("ERROR : Write target IP Address\n");
 		return 0;
 	}
-	//	
+	//
+	targetIP = argv[3];
+
 	tempfp = popen("ifconfig | grep \"ether\" | awk '{print $2'}", "r");
 	if(tempfp == NULL){
 		perror("popen failed");
 		return -1;
 	}
-	while(fgets(senderMAC, 20, tempfp) != NULL){
-		printf("%s", senderMAC);
+	while(fgets(senderMAC, 19, tempfp) != NULL){
+		//printf("%s", senderMAC);
 	}
-	//
 	pclose(tempfp);
-	targetIP = argv[3];
+
+	tempfp = popen("ifconfig | grep \"inet\" | sed -n 1p | awk '{print $2'}", "r");
+	if(tempfp == NULL){
+		perror("popen failed");
+		return -1;
+	}
+	while(fgets(myIP, 17, tempfp) != NULL){
+		//printf("%s", myIP);
+	}
+	pclose(tempfp);
 
 	printf("Device : %s\n", dev);	//	print Interface Device
 	printf("sender IP Address : %s\n", senderIP);
 	printf("target IP Address : %s\n", targetIP);
-
+	printf("My MAC Adress : %s", senderMAC);
+	printf("My IP Address : %s\n", myIP);
 	if(dev == NULL){
 		fprintf(stderr, "Couldn't find default device : %s\n", errbuf);
 		return (2);
@@ -295,7 +308,7 @@ int main(int argc, char *argv[]){
 		mypacket[33] = 0xff;
 		mypacket[34] = 0xff;
 		mypacket[35] = 0xff;
-		mypacket[36] = 0xff;
+
 		mypacket[37] = 0xff;
 
 		Target IP addr
@@ -309,7 +322,7 @@ int main(int argc, char *argv[]){
 		}
 		*/
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		
+		/*	
 		eth = (struct ether_header *)mypacket;
 		ether_aton_r("ff:ff:ff:ff:ff:ff", (struct ether_addr *)eth->ether_dhost);
 		ether_aton_r(senderMAC, (struct ether_addr *)eth->ether_shost);
@@ -374,7 +387,12 @@ int main(int argc, char *argv[]){
 			return 0;
 		}else{
 			printf("Sending ARP Reply is Success :) \n");
+		}*/
+		//int sendArpReply(pcap_t *handle, struct pcap_pkthdr *header, char *senderMAC, char *senderIP, char *targetMAC, char *targetIP){
+		if(sendArpReply(handle, header, senderMAC, senderIP, targetMAC, targetIP) == -1){
+			printf("failed\n");
 		}
+
 			
 	}else{}
 	pcap_close(handle);
